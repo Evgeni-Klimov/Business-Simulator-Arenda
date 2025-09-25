@@ -16,17 +16,29 @@ jobs:
       - name: Checkout 🛎️
         uses: actions/checkout@v3
 
-      # 2. Внедряем секрет прямо в index.html
-      - name: Replace API Key in index.html 🤫
+      # 2. Создаем чистую папку для сборки
+      - name: Create Build Directory
+        run: mkdir build
+
+      # 3. Внедряем секрет и помещаем готовый файл в папку 'build'
+      - name: Replace API Key and move to build folder 🤫
         run: |
-          # Эта команда теперь работает напрямую с index.html
-          sed -i 's|%%GEMINI_API_KEY%%|${{ secrets.GEMINI_API_KEY }}|g' index.html
+          # Эта команда читает ваш index.html, заменяет ключ и сохраняет результат в build/index.html
+          sed 's|%%GEMINI_API_KEY%%|${{ secrets.GEMINI_API_KEY }}|g' index.html > build/index.html
         
-      # 3. Публикуем результат
+      # 4. Проверяем ключ в новом файле внутри папки 'build'
+      - name: Verify Key Replacement in build/index.html (DEBUG) ✅
+        run: |
+          echo "Проверяем, был ли ключ вставлен в build/index.html:"
+          grep 'const apiKey =' build/index.html
+      
+      # 5. Публикуем ТОЛЬКО содержимое папки 'build'
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
-          folder: .
-          clean: true # Эта опция удалит все старые файлы из ветки публикации
+          # ВАЖНО: Мы явно указываем публиковать только папку 'build'
+          folder: build
+          # Эта опция гарантирует, что на сервере не останется старых файлов
+          clean: true 
 
