@@ -3,40 +3,30 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main # Убедитесь, что это ваша основная ветка
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Права на запись остаются
+      contents: write
 
     steps:
-      # 1. Копируем код вашего репозитория
+      # 1. Копируем код
       - name: Checkout 🛎️
         uses: actions/checkout@v3
 
-      # 2. ШАГ ДИАГНОСТИКИ: Показываем список файлов
-      - name: List files in the repository
-        run: ls -R
-
-      # 3. Внедрение секрета в новый файл index.html
-      - name: Replace API Key and create index.html 🤫
+      # 2. Внедряем секрет прямо в index.html
+      - name: Replace API Key in index.html 🤫
         run: |
-          # ВНИМАНИЕ: Если ваш HTML-файл называется иначе, измените имя в строке ниже.
-          # Эта команда читает ваш основной HTML, заменяет ключ и сохраняет результат в новый файл 'index.html'
-          sed 's|%%GEMINI_API_KEY%%|${{ secrets.GEMINI_API_KEY }}|g' tool_rental_business_simulator_v6.html > index.html
+          # Эта команда теперь работает напрямую с index.html
+          sed -i 's|%%GEMINI_API_KEY%%|${{ secrets.GEMINI_API_KEY }}|g' index.html
         
-      # 4. Проверка
-      - name: Verify Key Replacement in index.html (DEBUG) ✅
-        run: |
-          echo "Проверяем, был ли ключ вставлен в index.html:"
-          grep 'const apiKey =' index.html
-      
-      # 5. Публикация
+      # 3. Публикуем результат
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
-          folder: . # Публикуем все содержимое, включая новый index.html
+          folder: .
+          clean: true # Эта опция удалит все старые файлы из ветки публикации
 
