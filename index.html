@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Бизнес-симулятор с AI-советником | Прокат Инструмента</title>
+    <title>Бизнес-симулятор с AI-помощником | Прокат Инструмента</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -15,7 +15,8 @@
         h2 { color: #111827; font-weight: 700; font-size: 1.25rem; }
         h3 { color: #1e3a8a; font-weight: 600; font-size: 1.1rem; border-bottom: 2px solid #dbeafe; padding-bottom: 0.5rem; margin-bottom: 1rem; }
         .ai-button { background-color: #4f46e5; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; transition: background-color 0.2s; cursor: pointer; }
-        .ai-button:hover { background-color: #4338ca; }
+        .ai-button:hover:not(:disabled) { background-color: #4338ca; }
+        .ai-button:disabled { background-color: #a5b4fc; cursor: not-allowed; }
         .spinner { border-top-color: #3b82f6; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .toggle-label { display: inline-block; cursor: pointer; }
@@ -24,79 +25,93 @@
         .toggle-slider::before { content: ''; position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; background-color: white; border-radius: 50%; transition: transform 0.2s; }
         .toggle-input:checked + .toggle-slider { background-color: #2563eb; }
         .toggle-input:checked + .toggle-slider::before { transform: translateX(22px); }
+        .info-icon { cursor: pointer; color: #60a5fa; font-weight: bold; display: inline-block; margin-left: 8px; }
+        .info-box { background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px; margin-top: 8px; border-radius: 4px; font-size: 0.875rem; color: #1e40af; }
+        .summary-box { background-color: #f3f4f6; padding: 0.75rem; border-radius: 0.5rem; text-align: center; margin-top: 1rem; }
+        .summary-box .label { font-size: 0.875rem; color: #4b5563; }
+        .summary-box .value { font-size: 1.125rem; font-weight: 700; color: #1e3a8a; }
     </style>
 </head>
-<body>
-    <!-- HTML-структура остается без изменений -->
+<body class="text-gray-800">
+
     <header class="header-gradient text-white shadow-md mb-6">
-        <div class="container mx-auto px-6 py-4">
-            <h1 class="text-2xl font-bold">Бизнес-симулятор: Прокат Инструмента</h1>
-        </div>
+        <div class="container mx-auto px-6 py-4"><h1 class="text-2xl font-bold">Бизнес-симулятор: Прокат Инструмента</h1></div>
     </header>
 
     <main class="container mx-auto px-4 md:px-6">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
             <div class="lg:col-span-1 space-y-4 bg-white p-4 rounded-xl shadow-sm">
                 <h2 class="text-center mb-2">Настройки модели</h2>
-                
                 <div>
-                    <h3>Бизнес-модель</h3>
+                    <h3>Бизнес-модель <span class="info-icon" data-target="info-biz-model">ⓘ</span></h3>
+                    <div class="info-box hidden" id="info-biz-model">Выберите, как будет работать ваш бизнес. "Чистая аренда" — классический прокат. "Гибрид" — если у вас стройфирма, и вы сдаете простаивающий инструмент.</div>
                     <div class="p-3 bg-gray-50 rounded-lg">
-                        <div class="flex items-center justify-between">
-                            <span class="font-medium text-gray-700">Стройфирма + Аренда (Гибрид)</span>
-                            <label class="toggle-label">
-                                <input type="checkbox" id="hybridModelToggle" class="toggle-input">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
+                        <div class="flex items-center justify-between"><span class="font-medium text-gray-700">Стройфирма + Аренда (Гибрид)</span><label class="toggle-label"><input type="checkbox" id="hybridModelToggle" class="toggle-input"><span class="toggle-slider"></span></label></div>
                         <div id="downtimeSettings" class="hidden mt-3">
-                             <label for="downtimeSlider" class="text-sm font-medium">Процент простоя (доступно для аренды)</label>
-                             <div class="flex items-center space-x-2">
-                                <input type="range" id="downtimeSlider" min="10" max="90" value="40" class="w-full">
-                                <span id="downtimeValue" class="text-blue-700 font-bold"></span>
-                             </div>
+                             <label for="downtimeSlider" class="text-sm font-medium">Процент простоя <span class="info-icon" data-target="info-downtime">ⓘ</span></label>
+                             <div class="info-box hidden" id="info-downtime">Укажите, какую часть времени ваш инструмент свободен и может быть сдан в аренду.</div>
+                             <div class="flex items-center space-x-2"><input type="range" id="downtimeSlider" min="10" max="90" value="40" class="w-full"><span id="downtimeValue" class="text-blue-700 font-bold"></span></div>
                         </div>
                     </div>
                 </div>
-
                 <div id="investments">
-                    <h3>Инвестиции (CAPEX)</h3>
+                    <h3>Инвестиции (CAPEX) <span class="info-icon" data-target="info-capex">ⓘ</span></h3>
+                    <div class="info-box hidden" id="info-capex">Здесь вы планируете первоначальные вложения. Укажите, какой инструмент и в каком количестве вы планируете закупить для старта.</div>
                     <div id="tool-categories"></div>
+                    <div class="summary-box"><div class="label">Общие инвестиции</div><div class="value" id="totalCapexSummary"></div></div>
                 </div>
                 <div id="opex">
-                    <h3>Расходы в месяц (OPEX)</h3>
+                    <h3>Расходы в месяц (OPEX) <span class="info-icon" data-target="info-opex">ⓘ</span></h3>
+                    <div class="info-box hidden" id="info-opex">Это ваши регулярные ежемесячные траты: аренда, зарплаты сотрудникам и расходы на привлечение клиентов.</div>
                     <div class="space-y-2 text-sm">
-                         <div><label>Аренда, ₽</label><input type="number" id="rentCost" value="75000" class="w-full mt-1 p-2 border rounded-md"></div>
+                         <div><label>Аренда помещения, ₽</label><input type="number" id="rentCost" value="75000" class="w-full mt-1 p-2 border rounded-md"></div>
                          <div><label>Сотрудники, чел.</label><input type="number" id="employeesCount" value="4" class="w-full mt-1 p-2 border rounded-md"></div>
                          <div><label>Средняя ЗП, ₽</label><input type="number" id="avgSalary" value="60000" class="w-full mt-1 p-2 border rounded-md"></div>
                          <div><label>Маркетинг, ₽</label><input type="number" id="marketingCost" value="40000" class="w-full mt-1 p-2 border rounded-md"></div>
                     </div>
+                    <div class="summary-box"><div class="label">Итого постоянных расходов в месяц</div><div class="value" id="totalOpexSummary"></div></div>
                 </div>
                 <div id="assumptions">
-                    <h3>Допущения</h3>
+                    <h3>Допущения <span class="info-icon" data-target="info-assumptions">ⓘ</span></h3>
+                    <div class="info-box hidden" id="info-assumptions">Дополнительные параметры, влияющие на расчет чистой прибыли: процент от выручки на ремонт и ваша система налогообложения.</div>
                     <div class="space-y-2 text-sm">
                         <div><label>Ремонт (% от выручки)</label><input type="number" id="repairCostPercent" value="5" class="w-full mt-1 p-2 border rounded-md"></div>
                         <div><label>Налог УСН Д-Р, %</label><input type="number" id="taxRate" value="15" class="w-full mt-1 p-2 border rounded-md"></div>
                     </div>
                 </div>
             </div>
-
             <div class="lg:col-span-2 space-y-6">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="kpi-card"><p class="text-sm text-gray-500">NPV (5 лет)</p><p id="npvValue" class="text-xl font-bold text-blue-700">-</p></div>
-                    <div class="kpi-card"><p class="text-sm text-gray-500">Окупаемость</p><p id="pbpValue" class="text-xl font-bold text-blue-700">-</p></div>
-                    <div class="kpi-card"><p class="text-sm text-gray-500">Прибыль/мес</p><p id="avgProfitValue" class="text-xl font-bold text-blue-700">-</p></div>
-                    <div class="kpi-card"><p class="text-sm text-gray-500">Безубыточность</p><p id="breakevenValue" class="text-xl font-bold text-blue-700">-</p></div>
+                <div>
+                    <h2 class="text-center mb-4">Ключевые результаты <span class="info-icon" data-target="info-kpi">ⓘ</span></h2>
+                    <div class="info-box hidden" id="info-kpi">
+                        <p><strong>NPV (Чистая приведенная стоимость):</strong> Главный показатель. Показывает, сколько денег проект принесет сверх всех затрат. Если больше нуля — проект выгоден.</p>
+                        <p><strong>Окупаемость:</strong> Через сколько месяцев ваши доходы полностью покроют первоначальные вложения.</p>
+                        <p><strong>Прибыль/мес:</strong> Средняя чистая прибыль, которую вы будете получать каждый месяц после уплаты всех расходов и налогов.</p>
+                        <p><strong>Безубыточность:</strong> Минимальная выручка в месяц, при которой вы работаете "в ноль", не неся убытков.</p>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="kpi-card"><p class="text-sm text-gray-500">NPV (5 лет)</p><p id="npvValue" class="text-xl font-bold text-blue-700">-</p></div>
+                        <div class="kpi-card"><p class="text-sm text-gray-500">Окупаемость</p><p id="pbpValue" class="text-xl font-bold text-blue-700">-</p></div>
+                        <div class="kpi-card"><p class="text-sm text-gray-500">Прибыль/мес</p><p id="avgProfitValue" class="text-xl font-bold text-blue-700">-</p></div>
+                        <div class="kpi-card"><p class="text-sm text-gray-500">Безубыточность</p><p id="breakevenValue" class="text-xl font-bold text-blue-700">-</p></div>
+                    </div>
                 </div>
-                
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="chart-container"><h3 class="text-center text-base">P&L: Выручка vs Прибыль</h3><canvas id="pnlChart"></canvas></div>
-                    <div class="chart-container"><h3 class="text-center text-base">Накопленный денежный поток (CF)</h3><canvas id="cashflowChart"></canvas></div>
+                    <div class="chart-container">
+                        <h3 class="text-center text-base">P&L: Доходы и Прибыль <span class="info-icon" data-target="info-pnl-chart">ⓘ</span></h3>
+                        <div class="info-box hidden" id="info-pnl-chart">Этот график показывает прогноз вашей годовой выручки (синий) и чистой прибыли (голубой) на 5 лет.</div><canvas id="pnlChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="text-center text-base">Денежный поток (CF) <span class="info-icon" data-target="info-cf-chart">ⓘ</span></h3>
+                        <div class="info-box hidden" id="info-cf-chart">Ключевой график. Показывает, как накапливаются ваши деньги. Точка, где линия пересекает ноль — это момент окупаемости проекта.</div><canvas id="cashflowChart"></canvas>
+                    </div>
                 </div>
-                
                 <div class="bg-white p-4 rounded-xl shadow-sm">
-                    <h2 class="text-center mb-4">AI Бизнес-советник</h2>
+                    <div class="flex items-center justify-center mb-4">
+                        <h2 class="text-center">AI Бизнес-советник</h2>
+                        <span id="ai-status-indicator" class="ml-2 text-xl" title="Статус AI-помощника">⚪</span>
+                    </div>
+                     <div id="ai-status-tooltip" class="text-center text-sm text-red-600 mb-4 hidden"></div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
                         <button id="aiOptimizeBtn" class="ai-button">Оптимизация расходов</button>
                         <button id="aiGrowthBtn" class="ai-button">Стратегия роста</button>
@@ -110,60 +125,28 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Весь JavaScript остается прежним, кроме функции getAiAnalysis
+    // --- ИНДИКАТОР И ПРОВЕРКА КЛЮЧА ---
+    const apiKey = "%%GEMINI_API_KEY%%";
+    const aiStatusIndicator = document.getElementById('ai-status-indicator');
+    const aiStatusTooltip = document.getElementById('ai-status-tooltip');
+    const aiButtons = [document.getElementById('aiOptimizeBtn'), document.getElementById('aiGrowthBtn'), document.getElementById('aiStepsBtn')];
 
-    async function getAiAnalysis(promptType) {
-        const aiResultDiv = document.getElementById('aiAnalysisResult');
-        if (!lastCalculationResult) {
-            aiResultDiv.innerHTML = 'Сначала рассчитайте модель.';
-            return;
-        }
-        
-        aiResultDiv.innerHTML = `<div class="flex justify-center items-center"><div class="spinner w-6 h-6 border-2 rounded-full"></div><p class="ml-2">AI-советник думает...</p></div>`;
-        
-        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
-        
-        // 1. Используем специальный заполнитель. GitHub Actions заменит его на реальный ключ.
-        const apiKey = "%%GEMINI_API_KEY%%";
-
-        // 2. Проверяем, был ли заменен заполнитель. Если нет, выводим ошибку.
-        // Это сработает при локальном запуске файла.
+    function checkAiStatus() {
         if (apiKey.startsWith("%%") || apiKey === "") {
-            aiResultDiv.textContent = 'Ошибка: API ключ не настроен. Эта функция будет работать только на опубликованном сайте GitHub Pages.';
-            return;
-        }
-
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
-
-        const { isHybrid, downtimePercent, pbp, npv, breakeven, marketingCost, fot, revenue } = lastCalculationResult;
-        const modelType = isHybrid ? `гибридная модель (стройка + аренда с ${Math.round(downtimePercent*100)}% простоя)` : 'модель чистой аренды';
-
-        const prompts = {
-            optimize: `System: Ты - финансовый директор в компании по аренде инструмента в Архангельске, работающей по модели "${modelType}".\nUser: Наши ежемесячные расходы: ФОТ ${formatCurrency(fot)}, маркетинг ${formatCurrency(marketingCost)}. Выручка от аренды ${formatCurrency(revenue)}. Дай 2-3 конкретные, действенные рекомендации по оптимизации этих расходов. Учти нашу бизнес-модель. Формат: краткие пункты.`,
-            growth: `System: Ты - директор по развитию в компании (${modelType}) в Архангельске.\nUser: Наши ключевые показатели арендного направления: окупаемость ${pbp}, NPV ${formatCurrency(npv)}. Предложи 2-3 реалистичные стратегии роста для нашего арендного бизнеса, учитывая специфику (${modelType}). Формат: краткие пункты.`,
-            steps: `System: Ты - опытный бизнес-стратег, помогающий стартапам в Архангельске.\nUser: Мы запускаем арендный бизнес по модели "${modelType}". Ключевые метрики: окупаемость ${pbp}, NPV ${formatCurrency(npv)}, точка безубыточности ${formatCurrency(breakeven)}. Сформулируй 3 самых главных, приоритетных шага, которые нужно сделать в первый год, чтобы проект точно стал успешным. Будь краток и убедителен.`
-        };
-
-        const [systemInstruction, userQuery] = prompts[promptType].split('\nUser:');
-
-        try {
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-            const payload = {
-                contents: [{ parts: [{ text: userQuery.trim() }] }],
-                systemInstruction: { parts: [{ text: systemInstruction.replace('System:', '').trim() }] },
-            };
-            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if (!response.ok) throw new Error(`API error: ${response.status}`);
-            const result = await response.json();
-            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-            aiResultDiv.innerHTML = text ? text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold">$1</strong>').replace(/-\s(.*?)(?:\n|$)/g, '<li class="ml-4 list-disc">$1</li>') : 'Не удалось получить ответ от AI.';
-        } catch (error) {
-            console.error("Gemini API Error:", error);
-            aiResultDiv.textContent = 'Ошибка при обращении к AI-сервису.';
+            aiStatusIndicator.textContent = '🔴';
+            aiStatusIndicator.title = 'AI-помощник неактивен';
+            aiStatusTooltip.textContent = 'API-ключ не настроен. Эта функция доступна только на опубликованном сайте.';
+            aiStatusTooltip.classList.remove('hidden');
+            aiButtons.forEach(btn => btn.disabled = true);
+        } else {
+            aiStatusIndicator.textContent = '🟢';
+            aiStatusIndicator.title = 'AI-помощник активен';
+            aiStatusTooltip.classList.add('hidden');
+            aiButtons.forEach(btn => btn.disabled = false);
         }
     }
+    // ------------------------------------
 
-    // --- Остальной JavaScript-код остается без изменений ---
     const formatCurrency = (value, compact = false) => new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0, notation: compact ? 'compact' : 'standard' }).format(value);
 
     const toolCategoriesContainer = document.getElementById('tool-categories');
@@ -175,43 +158,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     toolCategoriesData.forEach(cat => {
         const div = document.createElement('div');
-        div.innerHTML = `
-            <h4 class="font-semibold text-gray-700 text-sm mt-2">${cat.name}</h4>
-            <div class="grid grid-cols-4 gap-2 text-xs">
-                <div><label>Кол-во</label><input type="number" id="${cat.id}Count" value="${cat.count}" class="w-full p-1 border rounded"></div>
-                <div><label>Цена ₽</label><input type="number" id="${cat.id}Cost" value="${cat.cost}" class="w-full p-1 border rounded"></div>
-                <div><label>Ставка ₽</label><input type="number" id="${cat.id}Rate" value="${cat.rate}" class="w-full p-1 border rounded"></div>
-                <div><label>Дней/мес</label><input type="number" id="${cat.id}Utilization" value="${cat.utilization}" class="w-full p-1 border rounded"></div>
-            </div>`;
+        div.innerHTML = `<h4 class="font-semibold text-gray-700 text-sm mt-2">${cat.name}</h4><div class="grid grid-cols-4 gap-2 text-xs"><div><label>Кол-во <span class="info-icon" data-target="info-${cat.id}-count">ⓘ</span></label><input type="number" id="${cat.id}Count" value="${cat.count}" class="w-full p-1 border rounded"></div><div><label>Цена ₽ <span class="info-icon" data-target="info-${cat.id}-cost">ⓘ</span></label><input type="number" id="${cat.id}Cost" value="${cat.cost}" class="w-full p-1 border rounded"></div><div><label>Аренда/день ₽ <span class="info-icon" data-target="info-${cat.id}-rate">ⓘ</span></label><input type="number" id="${cat.id}Rate" value="${cat.rate}" class="w-full p-1 border rounded"></div><div><label>Дней/мес <span class="info-icon" data-target="info-${cat.id}-util">ⓘ</span></label><input type="number" id="${cat.id}Utilization" value="${cat.utilization}" class="w-full p-1 border rounded"></div></div><div id="info-${cat.id}-count" class="info-box hidden">Сколько единиц этого типа вы планируете закупить.</div><div id="info-${cat.id}-cost" class="info-box hidden">Средняя стоимость закупки одной единицы.</div><div id="info-${cat.id}-rate" class="info-box hidden">Цена сдачи в аренду одной единицы на один день.</div><div id="info-${cat.id}-util" class="info-box hidden">Ключевой параметр! Сколько дней в месяц каждая единица будет в аренде.</div>`;
         toolCategoriesContainer.appendChild(div);
     });
 
     const defaultOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: (v) => formatCurrency(v, true) } } } };
-    const pnlChart = new Chart(document.getElementById('pnlChart').getContext('2d'), {
-        type: 'bar',
-        data: { labels: [], datasets: [{ label: 'Выручка', data: [], backgroundColor: '#93c5fd' }, { label: 'Чистая прибыль', data: [], backgroundColor: '#3b82f6' }] },
-        options: defaultOptions
-    });
-    const cashflowChart = new Chart(document.getElementById('cashflowChart').getContext('2d'), {
-        type: 'line',
-        data: { labels: [], datasets: [{ label: 'Накопленный CF', data: [], borderColor: '#1e3a8a', fill: true, backgroundColor: 'rgba(59, 130, 246, 0.1)', tension: 0.1 }] },
-        options: defaultOptions
-    });
+    const pnlChart = new Chart(document.getElementById('pnlChart').getContext('2d'), { type: 'bar', data: { labels: [], datasets: [{ label: 'Выручка', data: [], backgroundColor: '#93c5fd' }, { label: 'Чистая прибыль', data: [], backgroundColor: '#3b82f6' }] }, options: defaultOptions });
+    const cashflowChart = new Chart(document.getElementById('cashflowChart').getContext('2d'), { type: 'line', data: { labels: [], datasets: [{ label: 'Накопленный CF', data: [], borderColor: '#1e3a8a', fill: true, backgroundColor: 'rgba(59, 130, 246, 0.1)', tension: 0.1 }] }, options: defaultOptions });
 
     const hybridToggle = document.getElementById('hybridModelToggle');
     const downtimeSettings = document.getElementById('downtimeSettings');
     const downtimeSlider = document.getElementById('downtimeSlider');
     const downtimeValue = document.getElementById('downtimeValue');
 
-    hybridToggle.addEventListener('change', () => {
-        downtimeSettings.classList.toggle('hidden', !hybridToggle.checked);
-        calculateAndRender();
-    });
-    downtimeSlider.addEventListener('input', () => {
-        downtimeValue.textContent = `${downtimeSlider.value}%`;
-        calculateAndRender();
-    });
+    hybridToggle.addEventListener('change', () => { downtimeSettings.classList.toggle('hidden', !hybridToggle.checked); calculateAndRender(); });
+    downtimeSlider.addEventListener('input', () => { downtimeValue.textContent = `${downtimeSlider.value}%`; calculateAndRender(); });
     downtimeValue.textContent = `${downtimeSlider.value}%`;
+
+    document.querySelectorAll('.info-icon').forEach(icon => { icon.addEventListener('click', () => { const targetId = icon.getAttribute('data-target'); document.getElementById(targetId).classList.toggle('hidden'); }); });
 
     let lastCalculationResult = null;
     function calculateAndRender() {
@@ -220,10 +184,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let totalCapex = 0;
         inputs.categories.forEach(cat => { totalCapex += cat.count * cat.cost; });
-
         const monthlyFOT = inputs.employeesCount * inputs.avgSalary;
         const monthlyFixedOpex = inputs.rentCost + monthlyFOT * 1.302 + inputs.marketingCost;
-        
         const monthlyResults = [];
         for (let i = 0; i < 60; i++) {
             let monthlyRevenue = 0, monthlyAmortization = 0;
@@ -236,21 +198,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const netProfit = ebt > 0 ? ebt * (1 - inputs.taxRate) : ebt;
             monthlyResults.push({ revenue: monthlyRevenue, netProfit, cashFlow: netProfit + monthlyAmortization });
         }
-        
         const yearlyResults = [];
-        for (let i = 0; i < 5; i++) {
-            const yearSlice = monthlyResults.slice(i * 12, (i + 1) * 12);
-            yearlyResults.push({ revenue: yearSlice.reduce((s, m) => s + m.revenue, 0), netProfit: yearSlice.reduce((s, m) => s + m.netProfit, 0) });
-        }
-        
+        for (let i = 0; i < 5; i++) { const yearSlice = monthlyResults.slice(i * 12, (i + 1) * 12); yearlyResults.push({ revenue: yearSlice.reduce((s, m) => s + m.revenue, 0), netProfit: yearSlice.reduce((s, m) => s + m.netProfit, 0) }); }
         let cumulativeCF = -totalCapex, pbpMonths = -1;
         const cumulativeCFData = [cumulativeCF];
-        for (let i = 0; i < 60; i++) {
-            cumulativeCF += monthlyResults[i].cashFlow;
-            cumulativeCFData.push(cumulativeCF);
-            if (cumulativeCF > 0 && pbpMonths === -1) pbpMonths = i + 1;
-        }
-
+        for (let i = 0; i < 60; i++) { cumulativeCF += monthlyResults[i].cashFlow; cumulativeCFData.push(cumulativeCF); if (cumulativeCF > 0 && pbpMonths === -1) pbpMonths = i + 1; }
         const npv = cumulativeCFData[60];
         const avgMonthlyProfit = monthlyResults.reduce((s, m) => s + m.netProfit, 0) / 60;
         const breakeven = monthlyFixedOpex / (1 - inputs.repairCostPercent);
@@ -261,16 +213,36 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('pbpValue').textContent = lastCalculationResult.pbp;
         document.getElementById('avgProfitValue').textContent = formatCurrency(avgMonthlyProfit, true);
         document.getElementById('breakevenValue').textContent = formatCurrency(breakeven, true);
+        document.getElementById('totalCapexSummary').textContent = formatCurrency(totalCapex);
+        document.getElementById('totalOpexSummary').textContent = formatCurrency(monthlyFixedOpex);
 
         const years = yearlyResults.map((_, i) => `Год ${i+1}`);
-        pnlChart.data.labels = years;
-        pnlChart.data.datasets[0].data = yearlyResults.map(y => y.revenue);
-        pnlChart.data.datasets[1].data = yearlyResults.map(y => y.netProfit);
-        pnlChart.update();
+        pnlChart.data.labels = years; pnlChart.data.datasets[0].data = yearlyResults.map(y => y.revenue); pnlChart.data.datasets[1].data = yearlyResults.map(y => y.netProfit); pnlChart.update();
+        cashflowChart.data.labels = Array.from({length: 61}, (_, i) => i); cashflowChart.data.datasets[0].data = cumulativeCFData; cashflowChart.update();
+    }
 
-        cashflowChart.data.labels = Array.from({length: 61}, (_, i) => i);
-        cashflowChart.data.datasets[0].data = cumulativeCFData;
-        cashflowChart.update();
+    async function getAiAnalysis(promptType) {
+        const aiResultDiv = document.getElementById('aiAnalysisResult');
+        if (!lastCalculationResult) { aiResultDiv.innerHTML = 'Сначала рассчитайте модель.'; return; }
+        aiResultDiv.innerHTML = `<div class="flex justify-center items-center"><div class="spinner w-6 h-6 border-2 rounded-full"></div><p class="ml-2">AI-советник думает...</p></div>`;
+        
+        const { isHybrid, downtimePercent, pbp, npv, breakeven, marketingCost, fot, revenue } = lastCalculationResult;
+        const modelType = isHybrid ? `гибридная модель (стройка + аренда с ${Math.round(downtimePercent*100)}% простоя)` : 'модель чистой аренды';
+        const prompts = {
+            optimize: `System: Ты - опытный бизнес-наставник из Архангельска. Говори просто и по-человечески.\nUser: Мой бизнес (${modelType}) тратит в месяц ${formatCurrency(fot)} на зарплаты и ${formatCurrency(marketingCost)} на рекламу. Выручка ${formatCurrency(revenue)}. Подскажи пару идей, как можно сократить эти расходы, не потеряв в качестве?`,
+            growth: `System: Ты - опытный бизнес-наставник из Архангельска. Говори просто и по-человечески.\nUser: Мой проект (${modelType}) имеет окупаемость ${pbp} и NPV ${formatCurrency(npv)}. Какие есть неочевидные способы в Архангельске, чтобы ускорить рост и быстрее окупить вложения?`,
+            steps: `System: Ты - опытный бизнес-наставник из Архангельска. Говори просто и по-человечески.\nUser: Я запускаю прокат (${modelType}) с окупаемостью ${pbp} и точкой безубыточности ${formatCurrency(breakeven)}. Назови 3 самых главных дела, которые нужно сделать в первый год, чтобы бизнес точно взлетел.`
+        };
+        const [systemInstruction, userQuery] = prompts[promptType].split('\nUser:');
+        try {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const payload = { contents: [{ parts: [{ text: userQuery.trim() }] }], systemInstruction: { parts: [{ text: systemInstruction.replace('System:', '').trim() }] }, };
+            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) throw new Error(`API error: ${response.status}`);
+            const result = await response.json();
+            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            aiResultDiv.innerHTML = text ? text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold">$1</strong>').replace(/-\s(.*?)(?:\n|$)/g, '<li class="ml-4 list-disc">$1</li>') : 'Не удалось получить ответ от AI.';
+        } catch (error) { console.error("Gemini API Error:", error); aiResultDiv.textContent = 'Ошибка при обращении к AI-сервису.'; }
     }
 
     document.querySelectorAll('input').forEach(input => input.addEventListener('input', calculateAndRender));
@@ -278,10 +250,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('aiGrowthBtn').addEventListener('click', () => getAiAnalysis('growth'));
     document.getElementById('aiStepsBtn').addEventListener('click', () => getAiAnalysis('steps'));
     
+    checkAiStatus();
     calculateAndRender();
 });
 </script>
 
 </body>
 </html>
-
